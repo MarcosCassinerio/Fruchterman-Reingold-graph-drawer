@@ -10,6 +10,7 @@ import random
 import matplotlib.pyplot
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 
 class LayoutGraph:
@@ -43,24 +44,32 @@ class LayoutGraph:
         self.width = width
         self.height = height
 
+        plt.rcParams["figure.figsize"] = (self.width/100 + 1, self.height/100 + 1)
+
     def layout(self):
+
         """
         Aplica el algoritmo de Fruchtermann-Reingold para obtener (y mostrar)
         un layout
         """
-        self.randomize_positions()
-        self.show_graph()
+        for i in range(self.iters):
+            if i % self.refresh == 0:
+                self.randomize_positions()
+                self.show_graph()
+        time.sleep(5)
         pass
 
     def show_graph(self):
+        plt.clf()
+        plt.xlim([0, self.width])
+        plt.ylim([0, self.height])
         for pos in self.posiciones.values():
             plt.scatter(pos[0], pos[1], color='blue')
         for arist in self.grafo[1]:
             plt.plot([self.posiciones[arist[0]][0], self.posiciones[arist[1]][0]],
                      [self.posiciones[arist[0]][1], self.posiciones[arist[1]][1]],
                      color='green')
-
-        plt.show()
+        plt.pause(0.1)
 
 
     def randomize_positions(self):
@@ -170,8 +179,8 @@ def main():
         refresh=args.ref,
         c1=args.cr,
         c2=args.ca,
-        width=640,
-        height=420,
+        width=800,
+        height=700,
         verbose=args.verbose
     )
 
