@@ -5,13 +5,16 @@
 # Ejemplo parseo argumentos
 
 import argparse
+import random
+
+import matplotlib.pyplot
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 class LayoutGraph:
 
-    def __init__(self, grafo, iters, refresh, c1, c2, verbose=False):
+    def __init__(self, grafo, iters, temperature, refresh, c1, c2, width, height, verbose=False):
         """
         Parámetros:
         grafo: grafo en formato lista
@@ -33,17 +36,41 @@ class LayoutGraph:
         # Guardo opciones
         self.iters = iters
         self.verbose = verbose
-        # TODO: faltan opciones
+        self.temperature = temperature
         self.refresh = refresh
         self.c1 = c1
         self.c2 = c2
+        self.width = width
+        self.height = height
 
     def layout(self):
         """
         Aplica el algoritmo de Fruchtermann-Reingold para obtener (y mostrar)
         un layout
         """
+        self.randomize_positions()
+        self.show_graph()
         pass
+
+    def show_graph(self):
+        for pos in self.posiciones.values():
+            plt.scatter(pos[0], pos[1], color='blue')
+        for arist in self.grafo[1]:
+            plt.plot([self.posiciones[arist[0]][0], self.posiciones[arist[1]][0]],
+                     [self.posiciones[arist[0]][1], self.posiciones[arist[1]][1]],
+                     color='green')
+
+        plt.show()
+
+
+    def randomize_positions(self):
+        for vertice in self.grafo[0]:
+            self.posiciones[vertice] = (random.randint(0, self.width), random.randint(0, self.height))
+
+    def initialize_forces(self):
+        for vertice in self.grafo[0]:
+            self.fuerzas[vertice] = (0, 0)
+
 
 def leer_grafo(nombre_archivo):
     lines = []
@@ -53,7 +80,7 @@ def leer_grafo(nombre_archivo):
     n = 0
     vertices = []
     aristas = []
-    if (len(lines) > 0):
+    if len(lines) > 0:
         n = lines[0].rstrip('\n')
         if n.isnumeric():
             n = int(n)
@@ -76,7 +103,7 @@ def leer_grafo(nombre_archivo):
                     raise Exception('Lazo no permitido')
                 aristas.append(arista)
     else:
-        print('p[pipi')
+        raise Exception('Archivo vacio')
 
     return vertices, aristas
 
@@ -104,6 +131,27 @@ def main():
         help='Temperatura inicial',
         default=100.0
     )
+    # Refresh
+    parser.add_argument(
+        '--ref',
+        type=int,
+        help='Tasa de refresco',
+        default=1
+    )
+    # Constante de repulsion
+    parser.add_argument(
+        '--cr',
+        type=float,
+        help='Constante de repulsion',
+        default=0.1
+    )
+    # Constante de atraccion
+    parser.add_argument(
+        '--ca',
+        type=float,
+        help='Constante de atraccion',
+        default=5.0
+    )
     # Archivo del cual leer el grafo
     parser.add_argument(
         'file_name',
@@ -112,27 +160,18 @@ def main():
 
     args = parser.parse_args()
 
-    # Descomentar abajo para ver funcionamiento de argparse
-    print(args.verbose)
-    print(args.iters)
-    print(args.file_name)
-    print(args.temp)
-
-    leer_grafo(args.file_name)
-
-    return
-
-    # TODO: Borrar antes de la entrega
-    grafo1 = ([1, 2, 3, 4, 5, 6, 7],
-              [(1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 1)])
+    grafo = leer_grafo(args.file_name)
 
     # Creamos nuestro objeto LayoutGraph
     layout_gr = LayoutGraph(
-        grafo1,  # TODO: Cambiar para usar grafo leido de archivo
+        grafo,
         iters=args.iters,
-        refresh=1,
-        c1=0.1,
-        c2=5.0,
+        temperature=args.temp,
+        refresh=args.ref,
+        c1=args.cr,
+        c2=args.ca,
+        width=640,
+        height=420,
         verbose=args.verbose
     )
 
