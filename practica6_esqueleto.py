@@ -8,12 +8,12 @@ from math import sqrt
 from numpy import random as nprandom
 
 import matplotlib.pyplot as plt
-import time
 
 
 class LayoutGraph:
 
-    def __init__(self, grafo, iters, temperature, refresh, c1, c2, width, height, gravity, cooling, save, verbose=False):
+    def __init__(self, grafo, iters, temperature, refresh, c1, c2, width, height,
+                 gravity, cooling, save, verbose=False):
         """
         Parámetros:
         grafo: grafo en formato lista
@@ -57,7 +57,7 @@ class LayoutGraph:
 
         self.error = 1
 
-        plt.rcParams["figure.figsize"] = (self.width / 20 + 1, self.height / 20 + 1)
+        plt.rcParams["figure.figsize"] = (self.width / 100 + 3, self.height / 100 + 3)
 
     def layout(self):
         """
@@ -183,10 +183,8 @@ class LayoutGraph:
 
 
 def leer_grafo(nombre_archivo):
-    lines = []
     with open(nombre_archivo) as f:
         lines = f.readlines()
-    n = 0
     vertices = []
     aristas = []
     if len(lines) > 0:
@@ -300,11 +298,11 @@ def main():
         refresh=args.ref,
         c1=args.cr,
         c2=args.ca,
-        width=100,
-        height=100,
+        width=500,
+        height=500,
         gravity=args.g,
         cooling=args.cooling,
-        save = args.save,
+        save=args.save,
         verbose=args.verbose
     )
 
