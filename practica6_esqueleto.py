@@ -13,7 +13,7 @@ import time
 
 class LayoutGraph:
 
-    def __init__(self, grafo, iters, temperature, refresh, c1, c2, width, height, gravity, cooling, verbose=False):
+    def __init__(self, grafo, iters, temperature, refresh, c1, c2, width, height, gravity, cooling, save, verbose=False):
         """
         Parámetros:
         grafo: grafo en formato lista
@@ -26,6 +26,7 @@ class LayoutGraph:
         height: Tamaño del eje Y
         gravity: constante de gravedad
         cooling: constante de enfriamiento
+        save: archivo donde guardar
         verbose: si está encendido, activa los comentarios
         """
 
@@ -48,6 +49,7 @@ class LayoutGraph:
         self.height = height
         self.temperatureConstant = cooling
         self.g = gravity
+        self.save = save
 
         area_ratio = sqrt(self.width * self.height / len(self.grafo[0]))
         self.kAttraction = c2 * area_ratio
@@ -58,15 +60,20 @@ class LayoutGraph:
         plt.rcParams["figure.figsize"] = (self.width / 20 + 1, self.height / 20 + 1)
 
     def layout(self):
+        """
+            Aplica el algoritmo de Fruchtermann-Reingold para obtener (y mostrar)
+            un layout
+        """
         self.randomize_positions()
         self.print_message("Temperatura inicial: " + str(self.temperature))
         for i in range(self.iters):
             self.fruchterman_reingold_step()
             if self.refresh != 0 and i % self.refresh == 0:
                 self.show_graph()
-        self.show_graph()
-        time.sleep(5)
-        pass
+        if self.save:
+            plt.savefig(self.save)
+        else:
+            plt.show()
 
     def print_message(self, m):
         if self.verbose:
@@ -276,6 +283,10 @@ def main():
         'file_name',
         help='Archivo del cual leer el grafo a dibujar'
     )
+    parser.add_argument(
+        '-s', '--save',
+        help='Guarda el resultado en un archivo'
+    )
 
     args = parser.parse_args()
 
@@ -293,6 +304,7 @@ def main():
         height=100,
         gravity=args.g,
         cooling=args.cooling,
+        save = args.save,
         verbose=args.verbose
     )
 
