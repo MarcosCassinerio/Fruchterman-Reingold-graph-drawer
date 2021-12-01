@@ -5,6 +5,7 @@
 # Ejemplo parseo argumentos
 
 import argparse
+import math
 import random
 
 import matplotlib.pyplot
@@ -43,18 +44,20 @@ class LayoutGraph:
         self.c2 = c2
         self.width = width
         self.height = height
+        self.temperatureConstant = 0.95
 
-        plt.rcParams["figure.figsize"] = (self.width/100 + 1, self.height/100 + 1)
+        self.kAttraction = c2 * math.sqrt(self.width * self.height / len(self.grafo[0]))
+        self.kRepulsion = c1 * math.sqrt(self.width * self.height / len(self.grafo[0]))
+
+        self.error = 0.05
+
+        plt.rcParams["figure.figsize"] = (self.width / 100 + 1, self.height / 100 + 1)
 
     def layout(self):
-
-        """
-        Aplica el algoritmo de Fruchtermann-Reingold para obtener (y mostrar)
-        un layout
-        """
+        self.randomize_positions()
         for i in range(self.iters):
+            self.fruchterman_reingold_step()
             if i % self.refresh == 0:
-                self.randomize_positions()
                 self.show_graph()
         time.sleep(5)
         pass
@@ -71,14 +74,109 @@ class LayoutGraph:
                      color='green')
         plt.pause(0.1)
 
-
     def randomize_positions(self):
         for vertice in self.grafo[0]:
             self.posiciones[vertice] = (random.randint(0, self.width), random.randint(0, self.height))
 
     def initialize_forces(self):
-        for vertice in self.grafo[0]:
-            self.fuerzas[vertice] = (0, 0)
+        for v in self.grafo[0]:
+            self.fuerzas[v] = (0.0, 0.0)
+
+    def compute_attraction_forces(self):
+        for v1, v2 in self.grafo[1]:
+            distance = self.calculate_distance(self.posiciones[v1], self.posiciones[v2])
+            if distance > self.error:
+                mod_fa = self.f_attraction(distance)
+                force = self.calculate_force(mod_fa, distance, self.posiciones[v1], self.posiciones[v2])
+                self.fuerzas[v1] = sumar_tupla(self.fuerzas[v1], force)
+                self.fuerzas[v2] = restar_tupla(self.fuerzas[v2], force)
+
+    def compute_repulsion_forces(self):
+        for v1 in self.grafo[0]:
+            for v2 in self.grafo[0]:
+                if v1 != v2:
+                    distance = self.calculate_distance(self.posiciones[v1], self.posiciones[v2])
+                    if distance > self.error:
+                        mod_fr = self.f_respulsion(distance)
+                        force = self.calculate_force(mod_fr, distance, self.posiciones[v1], self.posiciones[v2])
+                        self.fuerzas[v1] = sumar_tupla(self.fuerzas[v1], force)
+                        self.fuerzas[v2] = restar_tupla(self.fuerzas[v2], force)
+                    else:
+                        force = (random.randint(-int(self.width / 4), int(self.width / 4)),
+                                 random.randint(-int(self.height / 4), int(self.height / 4)))
+                        self.fuerzas[v1] = sumar_tupla(self.fuerzas[v1], force)
+                        self.fuerzas[v2] = restar_tupla(self.fuerzas[v2], force)
+
+    @staticmethod
+    def calculate_distance(v1, v2):
+        return math.sqrt(math.pow(v1[0] - v2[0], 2) +
+                         math.pow(v1[1] - v2[1], 2))
+
+    @staticmethod
+    def calculate_force(mod_fa, distance, v1, v2):
+        return (mod_fa * (v2[0] - v1[0]) / distance,
+                mod_fa * (v2[1] - v1[1]) / distance)
+
+    def update_positions(self):
+        for v in self.grafo[0]:
+            modulo = math.sqrt(math.pow(self.fuerzas[v][0], 2) + math.pow(self.fuerzas[v][1], 2))
+            if modulo > self.temperature:
+                self.fuerzas[v] = (self.fuerzas[v][0] * self.temperature / modulo,
+                                   self.fuerzas[v][1] * self.temperature / modulo)
+            pos = sumar_tupla(self.posiciones[v], self.fuerzas[v])
+            if pos[0] < 0:
+                pos = 0, pos[1]
+            if pos[0] > self.width:
+                pos = self.width, pos[1]
+            if pos[1] < 0:
+                pos = pos[0], 0
+            if pos[1] > self.height:
+                pos = pos[0], self.height
+            self.posiciones[v] = pos
+
+    def f_attraction(self, distance):
+        return math.pow(distance, 2) / self.kAttraction
+
+    def f_respulsion(self, distance):
+        return math.pow(self.kRepulsion, 2) / distance
+
+    def compute_gravity_forces(self):
+        for v in self.grafo[0]:
+            center = self.width / 2, self.height / 2
+            distance = self.calculate_distance(self.posiciones[v], center)
+            mod_fa = self.f_attraction(distance)
+            force = self.calculate_force(mod_fa, distance, self.posiciones[v], center)
+            force = force[0] / 10, force[1] / 10
+            self.fuerzas[v] = sumar_tupla(self.fuerzas[v], force)
+
+    def update_temperature(self):
+        self.temperature = self.temperatureConstant * self.temperature
+
+    def fruchterman_reingold_step(self):
+        self.initialize_forces()
+        self.compute_attraction_forces()
+        self.compute_repulsion_forces()
+        self.compute_gravity_forces()
+        self.update_positions()
+        self.update_temperature()
+        """
+        # initialize temperature()
+        # initialize forces()
+        # compute attraction forces()
+        # compute repulsion forces()
+        # compute gravity forces()
+        # update positions()
+        # update temperature()
+        {nombre, ((,),(,))
+        """
+
+
+def sumar_tupla(a, b):
+    return a[0] + b[0], a[1] + b[1]
+
+
+def restar_tupla(a, b):
+    return a[0] - b[0], a[1] - b[1]
 
 
 def leer_grafo(nombre_archivo):
@@ -116,6 +214,7 @@ def leer_grafo(nombre_archivo):
 
     return vertices, aristas
 
+
 def main():
     # Definimos los argumentos de linea de comando que aceptamos
     parser = argparse.ArgumentParser()
@@ -131,7 +230,7 @@ def main():
         '--iters',
         type=int,
         help='Cantidad de iteraciones a efectuar',
-        default=50
+        default=100
     )
     # Temperatura inicial
     parser.add_argument(
@@ -152,7 +251,7 @@ def main():
         '--cr',
         type=float,
         help='Constante de repulsion',
-        default=0.1
+        default=50.0
     )
     # Constante de atraccion
     parser.add_argument(
@@ -179,8 +278,8 @@ def main():
         refresh=args.ref,
         c1=args.cr,
         c2=args.ca,
-        width=800,
-        height=700,
+        width=400,
+        height=400,
         verbose=args.verbose
     )
 
