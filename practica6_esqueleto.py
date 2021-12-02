@@ -72,8 +72,7 @@ class LayoutGraph:
                 self.show_graph()
         if self.save:
             plt.savefig(self.save)
-        else:
-            plt.show()
+        plt.show()
 
     def print_message(self, m):
         if self.verbose:
@@ -276,6 +275,20 @@ def main():
         help='Constante de enfriamiento',
         default=0.95
     )
+    # Ancho de la pestaña
+    parser.add_argument(
+        '--width',
+        type=int,
+        help='Ancho de la pestaña',
+        default=500
+    )
+    # Alto de la pestaña
+    parser.add_argument(
+        '--height',
+        type=int,
+        help='Alto de la pestaña',
+        default=500
+    )
     # Archivo del cual leer el grafo
     parser.add_argument(
         'file_name',
@@ -298,8 +311,8 @@ def main():
         refresh=args.ref,
         c1=args.cr,
         c2=args.ca,
-        width=500,
-        height=500,
+        width=args.width,
+        height=args.height,
         gravity=args.g,
         cooling=args.cooling,
         save=args.save,
