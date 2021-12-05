@@ -72,6 +72,7 @@ class LayoutGraph:
                 self.show_graph()
         if self.save:
             plt.savefig(self.save)
+        self.show_graph()
         plt.show()
 
     def print_message(self, m):
